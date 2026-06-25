@@ -187,7 +187,7 @@
 
 <div class="container" id="mainScreen">
   <h1>싸이클 인터벌</h1>
-  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v1.3 · 2026-06-25</div>
+  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v1.4 · 2026-06-25</div>
 
   <div class="rounds" id="roundDots">
     <div class="round-dot active" id="dot0"></div>
@@ -318,42 +318,49 @@
     src.start();
   }
 
+  // setTimeout 기반 소리 예약 (AudioContext 시계 아님 → 백그라운드에서도 동작)
+  let soundTimers = [];
+
   function clearScheduled() {
+    soundTimers.forEach(clearTimeout);
+    soundTimers = [];
     scheduledNodes.forEach(n => { try { n.stop(0); } catch(e) {} });
     scheduledNodes = [];
   }
 
-  function playBufAt(buf, ctxTime) {
+  async function playBufNow(buf) {
     if (!buf || !audioCtx) return;
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
     const src = audioCtx.createBufferSource();
     src.buffer = buf;
     src.connect(audioCtx.destination);
-    src.start(Math.max(ctxTime, audioCtx.currentTime));
+    src.start();
     scheduledNodes.push(src);
   }
 
-  function playBeepAt(freq, dur, ctxTime, type = 'sine', vol = 0.5) {
+  async function playBeepNow(freq, dur, type = 'sine', vol = 0.5) {
     if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.type = type;
     osc.frequency.value = freq;
-    const t = Math.max(ctxTime, audioCtx.currentTime);
+    const t = audioCtx.currentTime;
     gain.gain.setValueAtTime(vol, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
     osc.start(t);
-    osc.stop(t + dur + 0.05);
+    osc.stop(t + dur + 0.1);
     scheduledNodes.push(osc);
   }
 
-  // 전체 전환 이벤트 타임라인 계산
+  // 전체 전환 이벤트 타임라인
   function getTimeline() {
     const events = [];
     let t = sessionStartMs;
     for (let r = 0; r < TOTAL_ROUNDS; r++) {
-      events.push({ wallMs: t, type: 'exercise', round: r });
+      events.push({ wallMs: t, type: 'exercise' });
       t += EXERCISE_MS;
       if (r < TOTAL_ROUNDS - 1) {
         events.push({ wallMs: t, type: 'rest' });
@@ -365,24 +372,25 @@
     return events;
   }
 
+  // setTimeout(벽시계)으로 예약 → 재생 시점에 AudioContext를 깨워서 즉시 재생
+  // AudioContext가 정지돼도 setTimeout은 계속 돌기 때문에 유튜브 백그라운드에서도 작동
   function scheduleAllSounds() {
     clearScheduled();
-    if (!audioCtx) return;
     const wallNow = Date.now();
-    const ctxNow  = audioCtx.currentTime;
-    const toCtx   = ms => ctxNow + (ms - wallNow) / 1000;
-
     for (const ev of getTimeline()) {
-      if (ev.wallMs < wallNow - 200) continue;
-      const ct = toCtx(ev.wallMs);
-      if (ev.type === 'exercise') {
-        playBufAt(bufStart, ct);
-      } else if (ev.type === 'rest') {
-        playBeepAt(440, 0.3, ct);
-        playBeepAt(330, 0.6, ct + 0.35);
-      } else if (ev.type === 'done') {
-        playBufAt(bufDone, ct);
-      }
+      const delay = ev.wallMs - wallNow;
+      if (delay < -200) continue;
+      soundTimers.push(setTimeout(async () => {
+        if (!running) return;
+        if (ev.type === 'exercise') {
+          await playBufNow(bufStart);
+        } else if (ev.type === 'rest') {
+          await playBeepNow(440, 0.3);
+          setTimeout(() => playBeepNow(330, 0.6), 350);
+        } else if (ev.type === 'done') {
+          await playBufNow(bufDone);
+        }
+      }, Math.max(0, delay)));
     }
   }
 
@@ -572,9 +580,8 @@
     if (!document.hidden && running) {
       if (!wakeLock) await requestWakeLock();
       if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-      // 화면 복귀 시 남은 소리·진동 재예약
-      if (audioCtx) scheduleAllSounds();
-      scheduleVibrations();
+      // 화면 복귀 시 남은 소리 재예약
+      scheduleAllSounds();
       if (!keepaliveEl) startHtmlKeepalive();
       syncUI();
     }
