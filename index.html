@@ -187,7 +187,7 @@
 
 <div class="container" id="mainScreen">
   <h1>싸이클 인터벌</h1>
-  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v1.4 · 2026-06-25</div>
+  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v1.5 · 2026-06-25</div>
 
   <div class="rounds" id="roundDots">
     <div class="round-dot active" id="dot0"></div>
@@ -293,7 +293,6 @@
   async function initAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      startSilentKeepAlive();
     }
     if (audioCtx.state === 'suspended') await audioCtx.resume();
     if (!soundsReady && rawStart && rawDone) {
@@ -476,7 +475,6 @@
     document.getElementById('doneScreen').classList.remove('visible');
 
     await requestWakeLock();
-    startHtmlKeepalive();
     scheduleAllSounds();
     scheduleVibrations();
     syncUI();
@@ -582,7 +580,6 @@
       if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
       // 화면 복귀 시 남은 소리 재예약
       scheduleAllSounds();
-      if (!keepaliveEl) startHtmlKeepalive();
       syncUI();
     }
   });
