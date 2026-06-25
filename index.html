@@ -237,6 +237,44 @@
   let rawStart = null, rawDone = null;
   let soundsReady = false;
   let scheduledNodes = [];
+  let keepaliveEl = null;
+
+  // 브라우저가 이 탭을 미디어 앱으로 인식하게 하는 무음 루프
+  // → Android에서 화면이 꺼져도 AudioContext가 살아있음
+  function createSilentWavUrl() {
+    const sr = 8000, n = sr; // 1초 무음
+    const buf = new ArrayBuffer(44 + n);
+    const v = new DataView(buf);
+    const s = (o, x) => v.setUint32(o, x, false);
+    const sl = (o, x) => v.setUint32(o, x, true);
+    const sw = (o, x) => v.setUint16(o, x, true);
+    s(0,  0x52494646); sl(4, 36 + n);  s(8,  0x57415645);
+    s(12, 0x666d7420); sl(16, 16);     sw(20, 1); sw(22, 1);
+    sl(24, sr); sl(28, sr);            sw(32, 1); sw(34, 8);
+    s(36, 0x64617461); sl(40, n);
+    for (let i = 0; i < n; i++) v.setUint8(44 + i, 128); // 무음
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+
+  function startHtmlKeepalive() {
+    if (keepaliveEl) return;
+    keepaliveEl = new Audio(createSilentWavUrl());
+    keepaliveEl.loop   = true;
+    keepaliveEl.volume = 0.001;
+    keepaliveEl.play().catch(() => {});
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: '싸이클 인터벌', artist: '운동 중' });
+      navigator.mediaSession.playbackState = 'playing';
+    }
+  }
+
+  function stopHtmlKeepalive() {
+    if (!keepaliveEl) return;
+    keepaliveEl.pause();
+    keepaliveEl.src = '';
+    keepaliveEl = null;
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  }
 
   async function prefetchAudio() {
     try {
@@ -310,18 +348,21 @@
     const wallNow = Date.now();
     const ctxNow  = audioCtx.currentTime;
     const toCtx   = ms => ctxNow + (ms - wallNow) / 1000;
+    const future  = ms => ms > wallNow - 200; // 200ms 오차 허용
 
     let wallT = sessionStartMs;
     for (let r = 0; r < TOTAL_ROUNDS; r++) {
-      playBufAt(bufStart, toCtx(wallT));
+      if (future(wallT)) playBufAt(bufStart, toCtx(wallT));
       wallT += EXERCISE_MS;
       if (r < TOTAL_ROUNDS - 1) {
-        const rc = toCtx(wallT);
-        playBeepAt(440, 0.3, rc);
-        playBeepAt(330, 0.6, rc + 0.35);
+        if (future(wallT)) {
+          const rc = toCtx(wallT);
+          playBeepAt(440, 0.3, rc);
+          playBeepAt(330, 0.6, rc + 0.35);
+        }
         wallT += REST_MS;
       } else {
-        playBufAt(bufDone, toCtx(wallT));
+        if (future(wallT)) playBufAt(bufDone, toCtx(wallT));
       }
     }
   }
@@ -382,6 +423,7 @@
     document.getElementById('doneScreen').classList.remove('visible');
 
     await requestWakeLock();
+    startHtmlKeepalive();
     scheduleAllSounds();
     syncUI();
     timerId = setInterval(syncUI, 250);
@@ -391,6 +433,7 @@
     clearInterval(timerId);
     clearScheduled();
     releaseWakeLock();
+    stopHtmlKeepalive();
     running = false;
     resetUI();
   }
@@ -401,6 +444,7 @@
     running = false;
     clearInterval(timerId);
     releaseWakeLock();
+    stopHtmlKeepalive();
     document.getElementById('mainScreen').style.display = 'none';
     document.getElementById('doneScreen').classList.add('visible');
     document.body.className = '';
@@ -481,6 +525,9 @@
     if (!document.hidden && running) {
       if (!wakeLock) await requestWakeLock();
       if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+      // 화면 복귀 시 아직 남은 소리를 다시 예약
+      if (audioCtx) scheduleAllSounds();
+      if (!keepaliveEl) startHtmlKeepalive();
       syncUI();
     }
   });
