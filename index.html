@@ -187,7 +187,7 @@
 
 <div class="container" id="mainScreen">
   <h1>싸이클 인터벌</h1>
-  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v1.2 · 2026-06-25</div>
+  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v1.3 · 2026-06-25</div>
 
   <div class="rounds" id="roundDots">
     <div class="round-dot active" id="dot0"></div>
@@ -263,6 +263,10 @@
     keepaliveEl.loop   = true;
     keepaliveEl.volume = 0.001;
     keepaliveEl.play().catch(() => {});
+    // 유튜브 등 외부 앱이 오디오 포커스를 빼앗아도 자동 재개
+    keepaliveEl.addEventListener('pause', () => {
+      if (running) keepaliveEl.play().catch(() => {});
+    });
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({ title: '싸이클 인터벌', artist: '운동 중' });
       navigator.mediaSession.playbackState = 'playing';
@@ -344,28 +348,68 @@
     scheduledNodes.push(osc);
   }
 
+  // 전체 전환 이벤트 타임라인 계산
+  function getTimeline() {
+    const events = [];
+    let t = sessionStartMs;
+    for (let r = 0; r < TOTAL_ROUNDS; r++) {
+      events.push({ wallMs: t, type: 'exercise', round: r });
+      t += EXERCISE_MS;
+      if (r < TOTAL_ROUNDS - 1) {
+        events.push({ wallMs: t, type: 'rest' });
+        t += REST_MS;
+      } else {
+        events.push({ wallMs: t, type: 'done' });
+      }
+    }
+    return events;
+  }
+
   function scheduleAllSounds() {
     clearScheduled();
+    if (!audioCtx) return;
     const wallNow = Date.now();
     const ctxNow  = audioCtx.currentTime;
     const toCtx   = ms => ctxNow + (ms - wallNow) / 1000;
-    const future  = ms => ms > wallNow - 200; // 200ms 오차 허용
 
-    let wallT = sessionStartMs;
-    for (let r = 0; r < TOTAL_ROUNDS; r++) {
-      if (future(wallT)) playBufAt(bufStart, toCtx(wallT));
-      wallT += EXERCISE_MS;
-      if (r < TOTAL_ROUNDS - 1) {
-        if (future(wallT)) {
-          const rc = toCtx(wallT);
-          playBeepAt(440, 0.3, rc);
-          playBeepAt(330, 0.6, rc + 0.35);
-        }
-        wallT += REST_MS;
-      } else {
-        if (future(wallT)) playBufAt(bufDone, toCtx(wallT));
+    for (const ev of getTimeline()) {
+      if (ev.wallMs < wallNow - 200) continue;
+      const ct = toCtx(ev.wallMs);
+      if (ev.type === 'exercise') {
+        playBufAt(bufStart, ct);
+      } else if (ev.type === 'rest') {
+        playBeepAt(440, 0.3, ct);
+        playBeepAt(330, 0.6, ct + 0.35);
+      } else if (ev.type === 'done') {
+        playBufAt(bufDone, ct);
       }
     }
+  }
+
+  // 진동: 오디오 세션과 무관하게 동작 → 유튜브 재생 중에도 작동
+  let vibTimers = [];
+
+  function scheduleVibrations() {
+    vibTimers.forEach(clearTimeout);
+    vibTimers = [];
+    if (!('vibrate' in navigator)) return;
+    const wallNow = Date.now();
+
+    for (const ev of getTimeline()) {
+      const delay = ev.wallMs - wallNow;
+      if (delay < -200) continue;
+      vibTimers.push(setTimeout(() => {
+        if (!running) return;
+        if (ev.type === 'exercise') navigator.vibrate([100, 80, 100, 80, 300]);
+        else if (ev.type === 'rest')     navigator.vibrate([600]);
+        else if (ev.type === 'done')     navigator.vibrate([200, 100, 200, 100, 200, 100, 600]);
+      }, Math.max(0, delay)));
+    }
+  }
+
+  function clearVibrations() {
+    vibTimers.forEach(clearTimeout);
+    vibTimers = [];
   }
 
   // ── Wake Lock ────────────────────────────────────────────────
@@ -426,6 +470,7 @@
     await requestWakeLock();
     startHtmlKeepalive();
     scheduleAllSounds();
+    scheduleVibrations();
     syncUI();
     timerId = setInterval(syncUI, 250);
   }
@@ -433,6 +478,7 @@
   function stopAll() {
     clearInterval(timerId);
     clearScheduled();
+    clearVibrations();
     releaseWakeLock();
     stopHtmlKeepalive();
     running = false;
@@ -526,8 +572,9 @@
     if (!document.hidden && running) {
       if (!wakeLock) await requestWakeLock();
       if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-      // 화면 복귀 시 아직 남은 소리를 다시 예약
+      // 화면 복귀 시 남은 소리·진동 재예약
       if (audioCtx) scheduleAllSounds();
+      scheduleVibrations();
       if (!keepaliveEl) startHtmlKeepalive();
       syncUI();
     }
