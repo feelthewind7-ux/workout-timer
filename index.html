@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>싸이클 인터벌 타이머</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f23;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .bg-circle {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      pointer-events: none;
+      transition: background 1s ease;
+    }
+    .bg-circle-1 { width: 400px; height: 400px; top: -100px; left: -100px; background: #ff4757; }
+    .bg-circle-2 { width: 300px; height: 300px; bottom: -80px; right: -80px; background: #2ed573; }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      padding: 30px 20px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: #a0a0c0;
+      text-transform: uppercase;
+    }
+
+    /* 라운드 표시 */
+    .rounds {
+      display: flex;
+      gap: 12px;
+    }
+    .round-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #2a2a4a;
+      border: 2px solid #3a3a6a;
+      transition: all 0.4s ease;
+    }
+    .round-dot.active { background: #ffd700; border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
+    .round-dot.done { background: #2ed573; border-color: #2ed573; }
+
+    /* 페이즈 레이블 */
+    .phase-label {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: color 0.5s ease;
+    }
+    .phase-label.exercise { color: #ff4757; }
+    .phase-label.rest { color: #2ed573; }
+    .phase-label.ready { color: #a0a0c0; }
+
+    /* 원형 타이머 */
+    .timer-ring {
+      position: relative;
+      width: 260px;
+      height: 260px;
+    }
+    .timer-ring svg {
+      transform: rotate(-90deg);
+    }
+    .ring-bg {
+      fill: none;
+      stroke: #1e1e3a;
+      stroke-width: 12;
+    }
+    .ring-progress {
+      fill: none;
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 723;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+    }
+    .time-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .time-text {
+      font-size: 64px;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .time-sub {
+      font-size: 13px;
+      color: #606080;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* 다음 페이즈 */
+    .next-phase {
+      font-size: 15px;
+      color: #606080;
+      height: 20px;
+    }
+
+    /* 버튼 */
+    .btn {
+      width: 180px;
+      height: 64px;
+      border-radius: 32px;
+      border: none;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn:active { transform: scale(0.95); }
+
+    .btn-start {
+      background: linear-gradient(135deg, #ff4757, #ff6b81);
+      color: #fff;
+      box-shadow: 0 8px 30px rgba(255, 71, 87, 0.4);
+    }
+    .btn-start.rest-mode {
+      background: linear-gradient(135deg, #2ed573, #7bed9f);
+      box-shadow: 0 8px 30px rgba(46, 213, 115, 0.4);
+    }
+    .btn-stop {
+      background: linear-gradient(135deg, #2f3542, #3d4759);
+      color: #a0a0c0;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    /* 완료 화면 */
+    .done-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+    .done-screen.visible { display: flex; }
+    .done-icon { font-size: 72px; }
+    .done-title { font-size: 28px; font-weight: 700; color: #ffd700; }
+    .done-sub { font-size: 15px; color: #a0a0c0; line-height: 1.6; }
+
+    /* 상태에 따른 배경 */
+    body.exercise-mode .bg-circle-1 { opacity: 0.25; }
+    body.rest-mode .bg-circle-1 { opacity: 0.05; }
+    body.rest-mode .bg-circle-2 { opacity: 0.3; }
+  </style>
+</head>
+<body>
+<div class="bg-circle bg-circle-1"></div>
+<div class="bg-circle bg-circle-2"></div>
+
+<div class="container" id="mainScreen">
+  <h1>싸이클 인터벌</h1>
+
+  <div class="rounds" id="roundDots">
+    <div class="round-dot active" id="dot0"></div>
+    <div class="round-dot" id="dot1"></div>
+    <div class="round-dot" id="dot2"></div>
+    <div class="round-dot" id="dot3"></div>
+  </div>
+
+  <div class="phase-label ready" id="phaseLabel">준비</div>
+
+  <div class="timer-ring">
+    <svg width="260" height="260" viewBox="0 0 260 260">
+      <circle class="ring-bg" cx="130" cy="130" r="115"/>
+      <circle class="ring-progress" id="ringProgress" cx="130" cy="130" r="115"
+        stroke="#ff4757"/>
+    </svg>
+    <div class="time-display">
+      <div class="time-text" id="timeText">4:00</div>
+      <div class="time-sub" id="timeSub">운동 시간</div>
+    </div>
+  </div>
+
+  <div class="next-phase" id="nextPhase"></div>
+
+  <button class="btn btn-start" id="mainBtn" onclick="handleMainBtn()">시작</button>
+  <button class="btn btn-stop" id="stopBtn" onclick="stopAll()" style="display:none">중단</button>
+</div>
+
+<div class="container done-screen" id="doneScreen">
+  <div class="done-icon">🏆</div>
+  <div class="done-title">운동 완료!</div>
+  <div class="done-sub">4세트 모두 완료했습니다.<br>수고하셨습니다!</div>
+  <button class="btn btn-start" onclick="resetAll()" style="margin-top:10px">다시 시작</button>
+</div>
+
+<script>
+  // ── 상수 ────────────────────────────────────────────────────
+  const EXERCISE_MS  = 4 * 60 * 1000;
+  const REST_MS      = 3 * 60 * 1000;
+  const TOTAL_ROUNDS = 4;
+  const TOTAL_MS     = TOTAL_ROUNDS * EXERCISE_MS + (TOTAL_ROUNDS - 1) * REST_MS;
+  const CIRCUMFERENCE = 2 * Math.PI * 115;
+  const EXERCISE_SEC = EXERCISE_MS / 1000;
+
+  // ── 오디오 ──────────────────────────────────────────────────
+  let audioCtx = null;
+  let bufStart = null, bufDone = null;
+  let rawStart = null, rawDone = null;
+  let soundsReady = false;
+  let scheduledNodes = [];
+
+  async function prefetchAudio() {
+    try {
+      [rawStart, rawDone] = await Promise.all([
+        fetch('sounds/시작.wav').then(r => r.arrayBuffer()),
+        fetch('sounds/종료.wav').then(r => r.arrayBuffer()),
+      ]);
+    } catch(e) {}
+  }
+
+  async function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      startSilentKeepAlive();
+    }
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    if (!soundsReady && rawStart && rawDone) {
+      try {
+        bufStart = await audioCtx.decodeAudioData(rawStart);
+        bufDone  = await audioCtx.decodeAudioData(rawDone);
+        rawStart = rawDone = null;
+        soundsReady = true;
+      } catch(e) {}
+    }
+  }
+
+  function startSilentKeepAlive() {
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+    const src = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    src.buffer = buf;
+    src.loop = true;
+    gain.gain.value = 0.001;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start();
+  }
+
+  function clearScheduled() {
+    scheduledNodes.forEach(n => { try { n.stop(0); } catch(e) {} });
+    scheduledNodes = [];
+  }
+
+  function playBufAt(buf, ctxTime) {
+    if (!buf || !audioCtx) return;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(Math.max(ctxTime, audioCtx.currentTime));
+    scheduledNodes.push(src);
+  }
+
+  function playBeepAt(freq, dur, ctxTime, type = 'sine', vol = 0.5) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    const t = Math.max(ctxTime, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+    scheduledNodes.push(osc);
+  }
+
+  function scheduleAllSounds() {
+    clearScheduled();
+    const wallNow = Date.now();
+    const ctxNow  = audioCtx.currentTime;
+    const toCtx   = ms => ctxNow + (ms - wallNow) / 1000;
+
+    let wallT = sessionStartMs;
+    for (let r = 0; r < TOTAL_ROUNDS; r++) {
+      playBufAt(bufStart, toCtx(wallT));
+      wallT += EXERCISE_MS;
+      if (r < TOTAL_ROUNDS - 1) {
+        const rc = toCtx(wallT);
+        playBeepAt(440, 0.3, rc);
+        playBeepAt(330, 0.6, rc + 0.35);
+        wallT += REST_MS;
+      } else {
+        playBufAt(bufDone, toCtx(wallT));
+      }
+    }
+  }
+
+  // ── Wake Lock ────────────────────────────────────────────────
+  let wakeLock = null;
+
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch(e) {}
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release(); wakeLock = null; }
+  }
+
+  // ── 타이머 ──────────────────────────────────────────────────
+  let sessionStartMs = null;
+  let timerId = null;
+  let running = false;
+
+  function getStateAt(elapsedMs) {
+    if (elapsedMs >= TOTAL_MS) return { done: true };
+    let t = elapsedMs;
+    for (let r = 0; r < TOTAL_ROUNDS; r++) {
+      if (t < EXERCISE_MS) return { done: false, isExercise: true,  round: r, msLeft: EXERCISE_MS - t, totalSec: EXERCISE_MS / 1000 };
+      t -= EXERCISE_MS;
+      if (r < TOTAL_ROUNDS - 1) {
+        if (t < REST_MS)   return { done: false, isExercise: false, round: r, msLeft: REST_MS - t,     totalSec: REST_MS / 1000 };
+        t -= REST_MS;
+      }
+    }
+    return { done: true };
+  }
+
+  function syncUI() {
+    if (!running) return;
+    const state = getStateAt(Date.now() - sessionStartMs);
+    if (state.done) { showDone(); return; }
+    updateDisplay(state.isExercise, state.round, Math.ceil(state.msLeft / 1000), state.totalSec);
+  }
+
+  async function handleMainBtn() {
+    await initAudio();
+    if (!running) startTimer();
+  }
+
+  async function startTimer() {
+    running = true;
+    sessionStartMs = Date.now();
+
+    document.getElementById('mainBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'block';
+    document.getElementById('mainScreen').style.display = 'flex';
+    document.getElementById('doneScreen').classList.remove('visible');
+
+    await requestWakeLock();
+    scheduleAllSounds();
+    syncUI();
+    timerId = setInterval(syncUI, 250);
+  }
+
+  function stopAll() {
+    clearInterval(timerId);
+    clearScheduled();
+    releaseWakeLock();
+    running = false;
+    resetUI();
+  }
+
+  function resetAll() { stopAll(); }
+
+  function showDone() {
+    running = false;
+    clearInterval(timerId);
+    releaseWakeLock();
+    document.getElementById('mainScreen').style.display = 'none';
+    document.getElementById('doneScreen').classList.add('visible');
+    document.body.className = '';
+  }
+
+  // ── UI 렌더 ──────────────────────────────────────────────────
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function updateDisplay(isExercise, round, secLeft, totalSec) {
+    document.getElementById('timeText').textContent = formatTime(secLeft);
+
+    const ring = document.getElementById('ringProgress');
+    ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - secLeft / totalSec);
+    ring.style.strokeDasharray  = CIRCUMFERENCE;
+
+    const phaseEl = document.getElementById('phaseLabel');
+    const nextEl  = document.getElementById('nextPhase');
+    const subEl   = document.getElementById('timeSub');
+    const mainBtn = document.getElementById('mainBtn');
+
+    if (isExercise) {
+      phaseEl.textContent      = `운동 (${round + 1}세트)`;
+      phaseEl.className        = 'phase-label exercise';
+      ring.style.stroke        = '#ff4757';
+      subEl.textContent        = '운동 시간';
+      document.body.className  = 'exercise-mode';
+      mainBtn.className        = 'btn btn-start';
+      nextEl.textContent       = round < TOTAL_ROUNDS - 1 ? '다음 → 3분 휴식' : '마지막 세트!';
+    } else {
+      phaseEl.textContent      = '휴식';
+      phaseEl.className        = 'phase-label rest';
+      ring.style.stroke        = '#2ed573';
+      subEl.textContent        = '휴식 시간';
+      document.body.className  = 'rest-mode';
+      mainBtn.className        = 'btn btn-start rest-mode';
+      nextEl.textContent       = `다음 → ${round + 1}세트 운동`;
+    }
+
+    for (let i = 0; i < TOTAL_ROUNDS; i++) {
+      const dot = document.getElementById('dot' + i);
+      dot.className = 'round-dot';
+      if (i < round)        dot.classList.add('done');
+      else if (i === round) dot.classList.add('active');
+    }
+  }
+
+  function resetUI() {
+    document.getElementById('mainScreen').style.display = 'flex';
+    document.getElementById('doneScreen').classList.remove('visible');
+    document.getElementById('mainBtn').style.display = 'block';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('mainBtn').textContent = '시작';
+    document.getElementById('phaseLabel').textContent = '준비';
+    document.getElementById('phaseLabel').className = 'phase-label ready';
+    document.getElementById('nextPhase').textContent = '';
+    document.getElementById('timeText').textContent = '4:00';
+    document.getElementById('timeSub').textContent = '운동 시간';
+    document.body.className = '';
+
+    const ring = document.getElementById('ringProgress');
+    ring.style.stroke           = '#ff4757';
+    ring.style.strokeDashoffset = 0;
+    ring.style.strokeDasharray  = CIRCUMFERENCE;
+
+    for (let i = 0; i < TOTAL_ROUNDS; i++) {
+      const dot = document.getElementById('dot' + i);
+      dot.className = 'round-dot';
+      if (i === 0) dot.classList.add('active');
+    }
+  }
+
+  // ── Page Visibility: 앱 복귀 시 재동기화 ──────────────────────
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden && running) {
+      if (!wakeLock) await requestWakeLock();
+      if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+      syncUI();
+    }
+  });
+
+  // ── PWA 서비스워커 등록 ──────────────────────────────────────
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // ── 초기화 ──────────────────────────────────────────────────
+  prefetchAudio();
+
+  const ring = document.getElementById('ringProgress');
+  ring.style.strokeDasharray  = CIRCUMFERENCE;
+  ring.style.strokeDashoffset = 0;
+</script>
+</html>
