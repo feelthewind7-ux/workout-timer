@@ -12,7 +12,6 @@
   <link rel="apple-touch-icon" href="icon.png">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #0f0f23;
@@ -24,149 +23,64 @@
       justify-content: center;
       overflow: hidden;
     }
-
     .bg-circle {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.15;
-      pointer-events: none;
-      transition: background 1s ease;
+      position: fixed; border-radius: 50%;
+      filter: blur(80px); opacity: 0.15;
+      pointer-events: none; transition: background 1s ease;
     }
-    .bg-circle-1 { width: 400px; height: 400px; top: -100px; left: -100px; background: #ff4757; }
-    .bg-circle-2 { width: 300px; height: 300px; bottom: -80px; right: -80px; background: #2ed573; }
-
+    .bg-circle-1 { width:400px; height:400px; top:-100px; left:-100px; background:#ff4757; }
+    .bg-circle-2 { width:300px; height:300px; bottom:-80px; right:-80px; background:#2ed573; }
     .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 28px;
-      padding: 30px 20px;
-      width: 100%;
-      max-width: 400px;
+      display:flex; flex-direction:column; align-items:center;
+      gap:28px; padding:30px 20px; width:100%; max-width:400px;
     }
-
-    h1 {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 2px;
-      color: #a0a0c0;
-      text-transform: uppercase;
-    }
-
-    .rounds {
-      display: flex;
-      gap: 12px;
-    }
+    h1 { font-size:18px; font-weight:600; letter-spacing:2px; color:#a0a0c0; text-transform:uppercase; }
+    .rounds { display:flex; gap:12px; }
     .round-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #2a2a4a;
-      border: 2px solid #3a3a6a;
-      transition: all 0.4s ease;
+      width:14px; height:14px; border-radius:50%;
+      background:#2a2a4a; border:2px solid #3a3a6a; transition:all 0.4s ease;
     }
-    .round-dot.active { background: #ffd700; border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
-    .round-dot.done   { background: #2ed573; border-color: #2ed573; }
-
-    .phase-label {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      transition: color 0.5s ease;
-    }
-    .phase-label.exercise { color: #ff4757; }
-    .phase-label.rest     { color: #2ed573; }
-    .phase-label.ready    { color: #a0a0c0; }
-
-    .timer-ring {
-      position: relative;
-      width: 260px;
-      height: 260px;
-    }
-    .timer-ring svg { transform: rotate(-90deg); }
-    .ring-bg {
-      fill: none;
-      stroke: #1e1e3a;
-      stroke-width: 12;
-    }
+    .round-dot.active { background:#ffd700; border-color:#ffd700; box-shadow:0 0 10px #ffd700; }
+    .round-dot.done   { background:#2ed573; border-color:#2ed573; }
+    .phase-label { font-size:26px; font-weight:700; letter-spacing:1px; transition:color 0.5s ease; }
+    .phase-label.exercise { color:#ff4757; }
+    .phase-label.rest     { color:#2ed573; }
+    .phase-label.ready    { color:#a0a0c0; }
+    .timer-ring { position:relative; width:260px; height:260px; }
+    .timer-ring svg { transform:rotate(-90deg); }
+    .ring-bg { fill:none; stroke:#1e1e3a; stroke-width:12; }
     .ring-progress {
-      fill: none;
-      stroke-width: 12;
-      stroke-linecap: round;
-      stroke-dasharray: 723;
-      stroke-dashoffset: 0;
-      transition: stroke-dashoffset 0.25s linear, stroke 0.5s ease;
+      fill:none; stroke-width:12; stroke-linecap:round;
+      stroke-dasharray:723; stroke-dashoffset:0;
+      transition:stroke-dashoffset 0.25s linear, stroke 0.5s ease;
     }
     .time-display {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%); text-align:center;
     }
     .time-text {
-      font-size: 64px;
-      font-weight: 300;
-      line-height: 1;
-      letter-spacing: -2px;
-      font-variant-numeric: tabular-nums;
+      font-size:64px; font-weight:300; line-height:1;
+      letter-spacing:-2px; font-variant-numeric:tabular-nums;
     }
-    .time-sub {
-      font-size: 13px;
-      color: #606080;
-      margin-top: 4px;
-      letter-spacing: 1px;
-    }
-
-    .next-phase {
-      font-size: 15px;
-      color: #606080;
-      height: 20px;
-    }
-
+    .time-sub { font-size:13px; color:#606080; margin-top:4px; letter-spacing:1px; }
+    .next-phase { font-size:15px; color:#606080; height:20px; }
     .btn {
-      width: 180px;
-      height: 64px;
-      border-radius: 32px;
-      border: none;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      width:180px; height:64px; border-radius:32px; border:none;
+      font-size:20px; font-weight:700; letter-spacing:1px;
+      cursor:pointer; transition:all 0.2s ease;
     }
-    .btn:active { transform: scale(0.95); }
-    .btn-start {
-      background: linear-gradient(135deg, #ff4757, #ff6b81);
-      color: #fff;
-      box-shadow: 0 8px 30px rgba(255,71,87,0.4);
-    }
-    .btn-start.rest-mode {
-      background: linear-gradient(135deg, #2ed573, #7bed9f);
-      box-shadow: 0 8px 30px rgba(46,213,115,0.4);
-    }
-    .btn-stop {
-      background: linear-gradient(135deg, #2f3542, #3d4759);
-      color: #a0a0c0;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
-
-    .done-screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      text-align: center;
-    }
-    .done-screen.visible { display: flex; }
-    .done-icon  { font-size: 72px; }
-    .done-title { font-size: 28px; font-weight: 700; color: #ffd700; }
-    .done-sub   { font-size: 15px; color: #a0a0c0; line-height: 1.6; }
-
-    body.exercise-mode .bg-circle-1 { opacity: 0.25; }
-    body.rest-mode .bg-circle-1     { opacity: 0.05; }
-    body.rest-mode .bg-circle-2     { opacity: 0.3; }
+    .btn:active { transform:scale(0.95); }
+    .btn-start { background:linear-gradient(135deg,#ff4757,#ff6b81); color:#fff; box-shadow:0 8px 30px rgba(255,71,87,0.4); }
+    .btn-start.rest-mode { background:linear-gradient(135deg,#2ed573,#7bed9f); box-shadow:0 8px 30px rgba(46,213,115,0.4); }
+    .btn-stop { background:linear-gradient(135deg,#2f3542,#3d4759); color:#a0a0c0; box-shadow:0 4px 15px rgba(0,0,0,0.3); }
+    .done-screen { display:none; flex-direction:column; align-items:center; gap:16px; text-align:center; }
+    .done-screen.visible { display:flex; }
+    .done-icon  { font-size:72px; }
+    .done-title { font-size:28px; font-weight:700; color:#ffd700; }
+    .done-sub   { font-size:15px; color:#a0a0c0; line-height:1.6; }
+    body.exercise-mode .bg-circle-1 { opacity:0.25; }
+    body.rest-mode .bg-circle-1     { opacity:0.05; }
+    body.rest-mode .bg-circle-2     { opacity:0.3; }
   </style>
 </head>
 <body>
@@ -175,17 +89,14 @@
 
 <div class="container" id="mainScreen">
   <h1>싸이클 인터벌</h1>
-  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v2.0 · 2026-06-25</div>
-
+  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v3.0 · 2026-06-25</div>
   <div class="rounds" id="roundDots">
     <div class="round-dot active" id="dot0"></div>
     <div class="round-dot" id="dot1"></div>
     <div class="round-dot" id="dot2"></div>
     <div class="round-dot" id="dot3"></div>
   </div>
-
   <div class="phase-label ready" id="phaseLabel">준비</div>
-
   <div class="timer-ring">
     <svg width="260" height="260" viewBox="0 0 260 260">
       <circle class="ring-bg" cx="130" cy="130" r="115"/>
@@ -196,9 +107,7 @@
       <div class="time-sub" id="timeSub">운동 시간</div>
     </div>
   </div>
-
   <div class="next-phase" id="nextPhase"></div>
-
   <button class="btn btn-start" id="mainBtn" onclick="handleMainBtn()">시작</button>
   <button class="btn btn-stop"  id="stopBtn" onclick="stopAll()" style="display:none">중단</button>
 </div>
@@ -218,15 +127,19 @@
   const TOTAL_MS      = TOTAL_ROUNDS * EXERCISE_MS + (TOTAL_ROUNDS - 1) * REST_MS;
   const CIRCUMFERENCE = 2 * Math.PI * 115;
 
-  // ── 오디오 (HTMLAudioElement만 사용 — AudioContext 없음) ───────
-  // AudioContext는 백그라운드에서 브라우저가 정지시키지만,
-  // HTMLAudioElement는 이미 재생 권한을 얻은 페이지에서 계속 작동함
+  // ── 오디오 ─────────────────────────────────────────────────────
+  // AudioContext를 쓰지 않고 HTMLAudioElement만 사용.
+  // Chrome 자동재생 정책: 사용자 제스처(버튼 탭) 시점에 play()를 한 번 호출해야
+  // 이후 setTimeout 백그라운드에서도 play()가 허용된다.
+  // → handleMainBtn()에서 즉시 exercise 사운드를 재생하고,
+  //   나머지는 setTimeout으로 예약한다.
+
   let sndExercise = null;
   let sndRest     = null;
   let sndDone     = null;
-  let soundsReady = false;
+  let audioUnlocked = false;
 
-  // 순수 JS로 사인파 WAV 생성 (AudioContext 없이)
+  // AudioContext 없이 순수 JS로 사인파 WAV 생성
   function makeToneWav(freqHz, durationSec, vol = 0.5) {
     const sr = 44100;
     const n  = Math.floor(sr * durationSec);
@@ -240,7 +153,7 @@
     str(36, 'data'); dv.setUint32(40, n * 2, true);
     for (let i = 0; i < n; i++) {
       const t   = i / sr;
-      const env = Math.min(t / 0.01, 1, (durationSec - t) / 0.05); // 페이드인/아웃
+      const env = Math.min(t / 0.01, 1, (durationSec - t) / 0.05);
       dv.setInt16(44 + i * 2,
         Math.round(Math.sin(2 * Math.PI * freqHz * t) * 32767 * vol * Math.max(0, env)),
         true);
@@ -248,15 +161,27 @@
     return URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
   }
 
-  function initSounds() {
-    if (soundsReady) return;
+  function createSounds() {
     sndExercise = new Audio('sounds/시작.wav');
     sndDone     = new Audio('sounds/종료.wav');
     sndRest     = new Audio(makeToneWav(440, 0.6, 0.5));
     sndExercise.load();
     sndRest.load();
     sndDone.load();
-    soundsReady = true;
+  }
+
+  // 사용자 제스처 시점에 모든 사운드를 mute로 먼저 재생해 재생 권한 획득
+  // 이 단계를 거쳐야 이후 setTimeout 백그라운드에서도 play()가 차단되지 않음
+  function unlockAllSounds() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    [sndRest, sndDone].forEach(snd => {
+      if (!snd) return;
+      snd.muted = true;
+      snd.play()
+        .then(() => { snd.pause(); snd.currentTime = 0; snd.muted = false; })
+        .catch(() => { snd.muted = false; });
+    });
   }
 
   function playSound(snd) {
@@ -265,11 +190,11 @@
     snd.play().catch(() => {});
   }
 
-  // ── 타이밍 (setTimeout = 벽시계, AudioContext 무관) ───────────
-  let soundTimers   = [];
+  // ── 타이밍 (setTimeout = 벽시계) ──────────────────────────────
+  let soundTimers    = [];
   let sessionStartMs = null;
-  let displayTimer  = null;
-  let running       = false;
+  let displayTimer   = null;
+  let running        = false;
 
   function getTimeline() {
     const list = [];
@@ -287,13 +212,15 @@
     return list;
   }
 
-  function scheduleAllSounds() {
+  // skipFirstMs: 이미 재생한 첫 번째 사운드를 건너뛸 시간 범위 (ms)
+  function scheduleAllSounds(skipFirstMs = 0) {
     soundTimers.forEach(clearTimeout);
     soundTimers = [];
     const now = Date.now();
     for (const ev of getTimeline()) {
       const delay = ev.wallMs - now;
-      if (delay < -500) continue;   // 이미 지난 이벤트 건너뜀
+      if (delay < -500) continue;
+      if (skipFirstMs > 0 && delay < skipFirstMs) continue; // 이미 재생된 첫 사운드 건너뜀
       soundTimers.push(setTimeout(() => {
         if (!running) return;
         if      (ev.type === 'exercise') playSound(sndExercise);
@@ -323,10 +250,10 @@
     if (elapsedMs >= TOTAL_MS) return { done: true };
     let t = elapsedMs;
     for (let r = 0; r < TOTAL_ROUNDS; r++) {
-      if (t < EXERCISE_MS) return { done:false, isExercise:true,  round:r, msLeft:EXERCISE_MS - t, totalSec:EXERCISE_MS/1000 };
+      if (t < EXERCISE_MS) return { done:false, isExercise:true,  round:r, msLeft:EXERCISE_MS-t, totalSec:EXERCISE_MS/1000 };
       t -= EXERCISE_MS;
       if (r < TOTAL_ROUNDS - 1) {
-        if (t < REST_MS) return { done:false, isExercise:false, round:r, msLeft:REST_MS - t, totalSec:REST_MS/1000 };
+        if (t < REST_MS) return { done:false, isExercise:false, round:r, msLeft:REST_MS-t, totalSec:REST_MS/1000 };
         t -= REST_MS;
       }
     }
@@ -342,8 +269,19 @@
 
   // ── 컨트롤 ─────────────────────────────────────────────────────
   function handleMainBtn() {
-    initSounds();          // 사용자 제스처 시점에 소리 초기화 (자동재생 정책 우회)
-    if (!running) startTimer();
+    if (running) return;
+
+    // 사운드 생성
+    createSounds();
+
+    // ★ 핵심: 사용자 제스처 시점에 첫 사운드를 직접 재생
+    //    Chrome은 이 시점 이후로 이 페이지의 audio.play()를 백그라운드에서도 허용
+    playSound(sndExercise);
+
+    // 나머지 사운드(sndRest, sndDone)도 mute 상태로 재생해 재생 권한 확보
+    unlockAllSounds();
+
+    startTimer();
   }
 
   async function startTimer() {
@@ -356,7 +294,9 @@
     document.getElementById('doneScreen').classList.remove('visible');
 
     await requestWakeLock();
-    scheduleAllSounds();
+
+    // 첫 exercise 사운드는 handleMainBtn에서 이미 재생됨 → 2초 이내 이벤트 건너뜀
+    scheduleAllSounds(2000);
     syncUI();
     displayTimer = setInterval(syncUI, 250);
   }
@@ -366,6 +306,8 @@
     soundTimers.forEach(clearTimeout); soundTimers = [];
     releaseWakeLock();
     running = false;
+    audioUnlocked = false;
+    sndExercise = sndRest = sndDone = null;
     resetUI();
   }
 
@@ -385,7 +327,7 @@
   document.addEventListener('visibilitychange', async () => {
     if (!document.hidden && running) {
       if (!wakeLock) await requestWakeLock();
-      scheduleAllSounds(); // 탭 복귀 시 남은 소리 재예약
+      scheduleAllSounds(0); // 탭 복귀 시 남은 소리 재예약
       syncUI();
     }
   });
@@ -404,16 +346,13 @@
 
   function updateDisplay(isExercise, round, secLeft, totalSec) {
     document.getElementById('timeText').textContent = formatTime(secLeft);
-
     const ring = document.getElementById('ringProgress');
     ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - secLeft / totalSec);
     ring.style.strokeDasharray  = CIRCUMFERENCE;
-
     const phaseEl = document.getElementById('phaseLabel');
     const nextEl  = document.getElementById('nextPhase');
     const subEl   = document.getElementById('timeSub');
     const mainBtn = document.getElementById('mainBtn');
-
     if (isExercise) {
       phaseEl.textContent     = `운동 (${round + 1}세트)`;
       phaseEl.className       = 'phase-label exercise';
@@ -431,7 +370,6 @@
       mainBtn.className       = 'btn btn-start rest-mode';
       nextEl.textContent      = `다음 → ${round + 1}세트 운동`;
     }
-
     for (let i = 0; i < TOTAL_ROUNDS; i++) {
       const dot = document.getElementById('dot' + i);
       dot.className = 'round-dot';
@@ -452,12 +390,10 @@
     document.getElementById('timeText').textContent = '4:00';
     document.getElementById('timeSub').textContent = '운동 시간';
     document.body.className = '';
-
     const ring = document.getElementById('ringProgress');
     ring.style.stroke           = '#ff4757';
     ring.style.strokeDashoffset = 0;
     ring.style.strokeDasharray  = CIRCUMFERENCE;
-
     for (let i = 0; i < TOTAL_ROUNDS; i++) {
       const dot = document.getElementById('dot' + i);
       dot.className = 'round-dot';
