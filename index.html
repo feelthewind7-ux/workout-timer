@@ -54,7 +54,6 @@
       text-transform: uppercase;
     }
 
-    /* 라운드 표시 */
     .rounds {
       display: flex;
       gap: 12px;
@@ -68,9 +67,8 @@
       transition: all 0.4s ease;
     }
     .round-dot.active { background: #ffd700; border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
-    .round-dot.done { background: #2ed573; border-color: #2ed573; }
+    .round-dot.done   { background: #2ed573; border-color: #2ed573; }
 
-    /* 페이즈 레이블 */
     .phase-label {
       font-size: 26px;
       font-weight: 700;
@@ -78,18 +76,15 @@
       transition: color 0.5s ease;
     }
     .phase-label.exercise { color: #ff4757; }
-    .phase-label.rest { color: #2ed573; }
-    .phase-label.ready { color: #a0a0c0; }
+    .phase-label.rest     { color: #2ed573; }
+    .phase-label.ready    { color: #a0a0c0; }
 
-    /* 원형 타이머 */
     .timer-ring {
       position: relative;
       width: 260px;
       height: 260px;
     }
-    .timer-ring svg {
-      transform: rotate(-90deg);
-    }
+    .timer-ring svg { transform: rotate(-90deg); }
     .ring-bg {
       fill: none;
       stroke: #1e1e3a;
@@ -101,7 +96,7 @@
       stroke-linecap: round;
       stroke-dasharray: 723;
       stroke-dashoffset: 0;
-      transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+      transition: stroke-dashoffset 0.25s linear, stroke 0.5s ease;
     }
     .time-display {
       position: absolute;
@@ -124,14 +119,12 @@
       letter-spacing: 1px;
     }
 
-    /* 다음 페이즈 */
     .next-phase {
       font-size: 15px;
       color: #606080;
       height: 20px;
     }
 
-    /* 버튼 */
     .btn {
       width: 180px;
       height: 64px;
@@ -142,19 +135,16 @@
       letter-spacing: 1px;
       cursor: pointer;
       transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
     }
     .btn:active { transform: scale(0.95); }
-
     .btn-start {
       background: linear-gradient(135deg, #ff4757, #ff6b81);
       color: #fff;
-      box-shadow: 0 8px 30px rgba(255, 71, 87, 0.4);
+      box-shadow: 0 8px 30px rgba(255,71,87,0.4);
     }
     .btn-start.rest-mode {
       background: linear-gradient(135deg, #2ed573, #7bed9f);
-      box-shadow: 0 8px 30px rgba(46, 213, 115, 0.4);
+      box-shadow: 0 8px 30px rgba(46,213,115,0.4);
     }
     .btn-stop {
       background: linear-gradient(135deg, #2f3542, #3d4759);
@@ -162,7 +152,6 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
-    /* 완료 화면 */
     .done-screen {
       display: none;
       flex-direction: column;
@@ -171,14 +160,13 @@
       text-align: center;
     }
     .done-screen.visible { display: flex; }
-    .done-icon { font-size: 72px; }
+    .done-icon  { font-size: 72px; }
     .done-title { font-size: 28px; font-weight: 700; color: #ffd700; }
-    .done-sub { font-size: 15px; color: #a0a0c0; line-height: 1.6; }
+    .done-sub   { font-size: 15px; color: #a0a0c0; line-height: 1.6; }
 
-    /* 상태에 따른 배경 */
     body.exercise-mode .bg-circle-1 { opacity: 0.25; }
-    body.rest-mode .bg-circle-1 { opacity: 0.05; }
-    body.rest-mode .bg-circle-2 { opacity: 0.3; }
+    body.rest-mode .bg-circle-1     { opacity: 0.05; }
+    body.rest-mode .bg-circle-2     { opacity: 0.3; }
   </style>
 </head>
 <body>
@@ -187,7 +175,7 @@
 
 <div class="container" id="mainScreen">
   <h1>싸이클 인터벌</h1>
-  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v1.5 · 2026-06-25</div>
+  <div style="font-size:11px;color:#3a3a6a;letter-spacing:1px;">v2.0 · 2026-06-25</div>
 
   <div class="rounds" id="roundDots">
     <div class="round-dot active" id="dot0"></div>
@@ -201,8 +189,7 @@
   <div class="timer-ring">
     <svg width="260" height="260" viewBox="0 0 260 260">
       <circle class="ring-bg" cx="130" cy="130" r="115"/>
-      <circle class="ring-progress" id="ringProgress" cx="130" cy="130" r="115"
-        stroke="#ff4757"/>
+      <circle class="ring-progress" id="ringProgress" cx="130" cy="130" r="115" stroke="#ff4757"/>
     </svg>
     <div class="time-display">
       <div class="time-text" id="timeText">4:00</div>
@@ -213,7 +200,7 @@
   <div class="next-phase" id="nextPhase"></div>
 
   <button class="btn btn-start" id="mainBtn" onclick="handleMainBtn()">시작</button>
-  <button class="btn btn-stop" id="stopBtn" onclick="stopAll()" style="display:none">중단</button>
+  <button class="btn btn-stop"  id="stopBtn" onclick="stopAll()" style="display:none">중단</button>
 </div>
 
 <div class="container done-screen" id="doneScreen">
@@ -224,202 +211,99 @@
 </div>
 
 <script>
-  // ── 상수 ────────────────────────────────────────────────────
-  const EXERCISE_MS  = 4 * 60 * 1000;
-  const REST_MS      = 3 * 60 * 1000;
-  const TOTAL_ROUNDS = 4;
-  const TOTAL_MS     = TOTAL_ROUNDS * EXERCISE_MS + (TOTAL_ROUNDS - 1) * REST_MS;
+  // ── 상수 ───────────────────────────────────────────────────────
+  const EXERCISE_MS   = 4 * 60 * 1000;
+  const REST_MS       = 3 * 60 * 1000;
+  const TOTAL_ROUNDS  = 4;
+  const TOTAL_MS      = TOTAL_ROUNDS * EXERCISE_MS + (TOTAL_ROUNDS - 1) * REST_MS;
   const CIRCUMFERENCE = 2 * Math.PI * 115;
-  const EXERCISE_SEC = EXERCISE_MS / 1000;
 
-  // ── 오디오 ──────────────────────────────────────────────────
-  let audioCtx = null;
-  let bufStart = null, bufDone = null;
-  let rawStart = null, rawDone = null;
+  // ── 오디오 (HTMLAudioElement만 사용 — AudioContext 없음) ───────
+  // AudioContext는 백그라운드에서 브라우저가 정지시키지만,
+  // HTMLAudioElement는 이미 재생 권한을 얻은 페이지에서 계속 작동함
+  let sndExercise = null;
+  let sndRest     = null;
+  let sndDone     = null;
   let soundsReady = false;
-  let scheduledNodes = [];
-  let keepaliveEl = null;
 
-  // 브라우저가 이 탭을 미디어 앱으로 인식하게 하는 무음 루프
-  // → Android에서 화면이 꺼져도 AudioContext가 살아있음
-  function createSilentWavUrl() {
-    const sr = 8000, n = sr; // 1초 무음
-    const buf = new ArrayBuffer(44 + n);
-    const v = new DataView(buf);
-    const s = (o, x) => v.setUint32(o, x, false);
-    const sl = (o, x) => v.setUint32(o, x, true);
-    const sw = (o, x) => v.setUint16(o, x, true);
-    s(0,  0x52494646); sl(4, 36 + n);  s(8,  0x57415645);
-    s(12, 0x666d7420); sl(16, 16);     sw(20, 1); sw(22, 1);
-    sl(24, sr); sl(28, sr);            sw(32, 1); sw(34, 8);
-    s(36, 0x64617461); sl(40, n);
-    for (let i = 0; i < n; i++) v.setUint8(44 + i, 128); // 무음
-    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
-  }
-
-  function startHtmlKeepalive() {
-    if (keepaliveEl) return;
-    keepaliveEl = new Audio(createSilentWavUrl());
-    keepaliveEl.loop   = true;
-    keepaliveEl.volume = 0.001;
-    keepaliveEl.play().catch(() => {});
-    // 유튜브 등 외부 앱이 오디오 포커스를 빼앗아도 자동 재개
-    keepaliveEl.addEventListener('pause', () => {
-      if (running) keepaliveEl.play().catch(() => {});
-    });
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: '싸이클 인터벌', artist: '운동 중' });
-      navigator.mediaSession.playbackState = 'playing';
+  // 순수 JS로 사인파 WAV 생성 (AudioContext 없이)
+  function makeToneWav(freqHz, durationSec, vol = 0.5) {
+    const sr = 44100;
+    const n  = Math.floor(sr * durationSec);
+    const ab = new ArrayBuffer(44 + n * 2);
+    const dv = new DataView(ab);
+    const str = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+    str(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); str(8, 'WAVE');
+    str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+    dv.setUint16(22, 1, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true);
+    dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    str(36, 'data'); dv.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) {
+      const t   = i / sr;
+      const env = Math.min(t / 0.01, 1, (durationSec - t) / 0.05); // 페이드인/아웃
+      dv.setInt16(44 + i * 2,
+        Math.round(Math.sin(2 * Math.PI * freqHz * t) * 32767 * vol * Math.max(0, env)),
+        true);
     }
+    return URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
   }
 
-  function stopHtmlKeepalive() {
-    if (!keepaliveEl) return;
-    keepaliveEl.pause();
-    keepaliveEl.src = '';
-    keepaliveEl = null;
-    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  function initSounds() {
+    if (soundsReady) return;
+    sndExercise = new Audio('sounds/시작.wav');
+    sndDone     = new Audio('sounds/종료.wav');
+    sndRest     = new Audio(makeToneWav(440, 0.6, 0.5));
+    sndExercise.load();
+    sndRest.load();
+    sndDone.load();
+    soundsReady = true;
   }
 
-  async function prefetchAudio() {
-    try {
-      [rawStart, rawDone] = await Promise.all([
-        fetch('sounds/시작.wav').then(r => r.arrayBuffer()),
-        fetch('sounds/종료.wav').then(r => r.arrayBuffer()),
-      ]);
-    } catch(e) {}
+  function playSound(snd) {
+    if (!snd) return;
+    snd.currentTime = 0;
+    snd.play().catch(() => {});
   }
 
-  async function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-    if (!soundsReady && rawStart && rawDone) {
-      try {
-        bufStart = await audioCtx.decodeAudioData(rawStart);
-        bufDone  = await audioCtx.decodeAudioData(rawDone);
-        rawStart = rawDone = null;
-        soundsReady = true;
-      } catch(e) {}
-    }
-  }
+  // ── 타이밍 (setTimeout = 벽시계, AudioContext 무관) ───────────
+  let soundTimers   = [];
+  let sessionStartMs = null;
+  let displayTimer  = null;
+  let running       = false;
 
-  function startSilentKeepAlive() {
-    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
-    const src = audioCtx.createBufferSource();
-    const gain = audioCtx.createGain();
-    src.buffer = buf;
-    src.loop = true;
-    gain.gain.value = 0.001;
-    src.connect(gain);
-    gain.connect(audioCtx.destination);
-    src.start();
-  }
-
-  // setTimeout 기반 소리 예약 (AudioContext 시계 아님 → 백그라운드에서도 동작)
-  let soundTimers = [];
-
-  function clearScheduled() {
-    soundTimers.forEach(clearTimeout);
-    soundTimers = [];
-    scheduledNodes.forEach(n => { try { n.stop(0); } catch(e) {} });
-    scheduledNodes = [];
-  }
-
-  async function playBufNow(buf) {
-    if (!buf || !audioCtx) return;
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-    src.connect(audioCtx.destination);
-    src.start();
-    scheduledNodes.push(src);
-  }
-
-  async function playBeepNow(freq, dur, type = 'sine', vol = 0.5) {
-    if (!audioCtx) return;
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.type = type;
-    osc.frequency.value = freq;
-    const t = audioCtx.currentTime;
-    gain.gain.setValueAtTime(vol, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    osc.start(t);
-    osc.stop(t + dur + 0.1);
-    scheduledNodes.push(osc);
-  }
-
-  // 전체 전환 이벤트 타임라인
   function getTimeline() {
-    const events = [];
+    const list = [];
     let t = sessionStartMs;
     for (let r = 0; r < TOTAL_ROUNDS; r++) {
-      events.push({ wallMs: t, type: 'exercise' });
+      list.push({ wallMs: t, type: 'exercise' });
       t += EXERCISE_MS;
       if (r < TOTAL_ROUNDS - 1) {
-        events.push({ wallMs: t, type: 'rest' });
+        list.push({ wallMs: t, type: 'rest' });
         t += REST_MS;
       } else {
-        events.push({ wallMs: t, type: 'done' });
+        list.push({ wallMs: t, type: 'done' });
       }
     }
-    return events;
+    return list;
   }
 
-  // setTimeout(벽시계)으로 예약 → 재생 시점에 AudioContext를 깨워서 즉시 재생
-  // AudioContext가 정지돼도 setTimeout은 계속 돌기 때문에 유튜브 백그라운드에서도 작동
   function scheduleAllSounds() {
-    clearScheduled();
-    const wallNow = Date.now();
+    soundTimers.forEach(clearTimeout);
+    soundTimers = [];
+    const now = Date.now();
     for (const ev of getTimeline()) {
-      const delay = ev.wallMs - wallNow;
-      if (delay < -200) continue;
-      soundTimers.push(setTimeout(async () => {
+      const delay = ev.wallMs - now;
+      if (delay < -500) continue;   // 이미 지난 이벤트 건너뜀
+      soundTimers.push(setTimeout(() => {
         if (!running) return;
-        if (ev.type === 'exercise') {
-          await playBufNow(bufStart);
-        } else if (ev.type === 'rest') {
-          await playBeepNow(440, 0.3);
-          setTimeout(() => playBeepNow(330, 0.6), 350);
-        } else if (ev.type === 'done') {
-          await playBufNow(bufDone);
-        }
+        if      (ev.type === 'exercise') playSound(sndExercise);
+        else if (ev.type === 'rest')     playSound(sndRest);
+        else if (ev.type === 'done')     playSound(sndDone);
       }, Math.max(0, delay)));
     }
   }
 
-  // 진동: 오디오 세션과 무관하게 동작 → 유튜브 재생 중에도 작동
-  let vibTimers = [];
-
-  function scheduleVibrations() {
-    vibTimers.forEach(clearTimeout);
-    vibTimers = [];
-    if (!('vibrate' in navigator)) return;
-    const wallNow = Date.now();
-
-    for (const ev of getTimeline()) {
-      const delay = ev.wallMs - wallNow;
-      if (delay < -200) continue;
-      vibTimers.push(setTimeout(() => {
-        if (!running) return;
-        if (ev.type === 'exercise') navigator.vibrate([100, 80, 100, 80, 300]);
-        else if (ev.type === 'rest')     navigator.vibrate([600]);
-        else if (ev.type === 'done')     navigator.vibrate([200, 100, 200, 100, 200, 100, 600]);
-      }, Math.max(0, delay)));
-    }
-  }
-
-  function clearVibrations() {
-    vibTimers.forEach(clearTimeout);
-    vibTimers = [];
-  }
-
-  // ── Wake Lock ────────────────────────────────────────────────
+  // ── Wake Lock ──────────────────────────────────────────────────
   let wakeLock = null;
 
   async function requestWakeLock() {
@@ -434,19 +318,15 @@
     if (wakeLock) { wakeLock.release(); wakeLock = null; }
   }
 
-  // ── 타이머 ──────────────────────────────────────────────────
-  let sessionStartMs = null;
-  let timerId = null;
-  let running = false;
-
+  // ── 상태 계산 ──────────────────────────────────────────────────
   function getStateAt(elapsedMs) {
     if (elapsedMs >= TOTAL_MS) return { done: true };
     let t = elapsedMs;
     for (let r = 0; r < TOTAL_ROUNDS; r++) {
-      if (t < EXERCISE_MS) return { done: false, isExercise: true,  round: r, msLeft: EXERCISE_MS - t, totalSec: EXERCISE_MS / 1000 };
+      if (t < EXERCISE_MS) return { done:false, isExercise:true,  round:r, msLeft:EXERCISE_MS - t, totalSec:EXERCISE_MS/1000 };
       t -= EXERCISE_MS;
       if (r < TOTAL_ROUNDS - 1) {
-        if (t < REST_MS)   return { done: false, isExercise: false, round: r, msLeft: REST_MS - t,     totalSec: REST_MS / 1000 };
+        if (t < REST_MS) return { done:false, isExercise:false, round:r, msLeft:REST_MS - t, totalSec:REST_MS/1000 };
         t -= REST_MS;
       }
     }
@@ -460,13 +340,14 @@
     updateDisplay(state.isExercise, state.round, Math.ceil(state.msLeft / 1000), state.totalSec);
   }
 
-  async function handleMainBtn() {
-    await initAudio();
+  // ── 컨트롤 ─────────────────────────────────────────────────────
+  function handleMainBtn() {
+    initSounds();          // 사용자 제스처 시점에 소리 초기화 (자동재생 정책 우회)
     if (!running) startTimer();
   }
 
   async function startTimer() {
-    running = true;
+    running        = true;
     sessionStartMs = Date.now();
 
     document.getElementById('mainBtn').style.display = 'none';
@@ -476,17 +357,14 @@
 
     await requestWakeLock();
     scheduleAllSounds();
-    scheduleVibrations();
     syncUI();
-    timerId = setInterval(syncUI, 250);
+    displayTimer = setInterval(syncUI, 250);
   }
 
   function stopAll() {
-    clearInterval(timerId);
-    clearScheduled();
-    clearVibrations();
+    clearInterval(displayTimer);
+    soundTimers.forEach(clearTimeout); soundTimers = [];
     releaseWakeLock();
-    stopHtmlKeepalive();
     running = false;
     resetUI();
   }
@@ -495,15 +373,29 @@
 
   function showDone() {
     running = false;
-    clearInterval(timerId);
+    clearInterval(displayTimer);
+    soundTimers.forEach(clearTimeout); soundTimers = [];
     releaseWakeLock();
-    stopHtmlKeepalive();
     document.getElementById('mainScreen').style.display = 'none';
     document.getElementById('doneScreen').classList.add('visible');
     document.body.className = '';
   }
 
-  // ── UI 렌더 ──────────────────────────────────────────────────
+  // ── Page Visibility ────────────────────────────────────────────
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden && running) {
+      if (!wakeLock) await requestWakeLock();
+      scheduleAllSounds(); // 탭 복귀 시 남은 소리 재예약
+      syncUI();
+    }
+  });
+
+  // ── PWA ────────────────────────────────────────────────────────
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // ── UI 렌더 ────────────────────────────────────────────────────
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -523,21 +415,21 @@
     const mainBtn = document.getElementById('mainBtn');
 
     if (isExercise) {
-      phaseEl.textContent      = `운동 (${round + 1}세트)`;
-      phaseEl.className        = 'phase-label exercise';
-      ring.style.stroke        = '#ff4757';
-      subEl.textContent        = '운동 시간';
-      document.body.className  = 'exercise-mode';
-      mainBtn.className        = 'btn btn-start';
-      nextEl.textContent       = round < TOTAL_ROUNDS - 1 ? '다음 → 3분 휴식' : '마지막 세트!';
+      phaseEl.textContent     = `운동 (${round + 1}세트)`;
+      phaseEl.className       = 'phase-label exercise';
+      ring.style.stroke       = '#ff4757';
+      subEl.textContent       = '운동 시간';
+      document.body.className = 'exercise-mode';
+      mainBtn.className       = 'btn btn-start';
+      nextEl.textContent      = round < TOTAL_ROUNDS - 1 ? '다음 → 3분 휴식' : '마지막 세트!';
     } else {
-      phaseEl.textContent      = '휴식';
-      phaseEl.className        = 'phase-label rest';
-      ring.style.stroke        = '#2ed573';
-      subEl.textContent        = '휴식 시간';
-      document.body.className  = 'rest-mode';
-      mainBtn.className        = 'btn btn-start rest-mode';
-      nextEl.textContent       = `다음 → ${round + 1}세트 운동`;
+      phaseEl.textContent     = '휴식';
+      phaseEl.className       = 'phase-label rest';
+      ring.style.stroke       = '#2ed573';
+      subEl.textContent       = '휴식 시간';
+      document.body.className = 'rest-mode';
+      mainBtn.className       = 'btn btn-start rest-mode';
+      nextEl.textContent      = `다음 → ${round + 1}세트 운동`;
     }
 
     for (let i = 0; i < TOTAL_ROUNDS; i++) {
@@ -573,27 +465,10 @@
     }
   }
 
-  // ── Page Visibility: 앱 복귀 시 재동기화 ──────────────────────
-  document.addEventListener('visibilitychange', async () => {
-    if (!document.hidden && running) {
-      if (!wakeLock) await requestWakeLock();
-      if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-      // 화면 복귀 시 남은 소리 재예약
-      scheduleAllSounds();
-      syncUI();
-    }
-  });
-
-  // ── PWA 서비스워커 등록 ──────────────────────────────────────
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-
-  // ── 초기화 ──────────────────────────────────────────────────
-  prefetchAudio();
-
+  // ── 초기화 ─────────────────────────────────────────────────────
   const ring = document.getElementById('ringProgress');
   ring.style.strokeDasharray  = CIRCUMFERENCE;
   ring.style.strokeDashoffset = 0;
 </script>
+</body>
 </html>
